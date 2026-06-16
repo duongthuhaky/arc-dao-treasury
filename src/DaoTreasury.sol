@@ -2,11 +2,18 @@
 pragma solidity ^0.8.20;
 
 interface IERC20 {
+    /// @notice transfer - core operation
     function transfer(address to, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
 }
 
+/// @title DaoTreasury
+/// @notice Core contract for DaoTreasury on Arc Network
+/// @dev Built with Foundry, deployed on Arc testnet (Chain ID: 5042002)
 contract DaoTreasury {
+    /// @notice Contract version
+    string public constant VERSION = "1.1.0";
+
     IERC20 public immutable usdc;
     address public admin;
 
@@ -40,15 +47,19 @@ contract DaoTreasury {
     modifier onlyAdmin() { require(msg.sender == admin, "NOT_ADMIN"); _; }
     modifier onlyMember() { require(isMember[msg.sender], "NOT_MEMBER"); _; }
 
+    /// @notice addMember - core operation
     function addMember(address m) external onlyAdmin { if (!isMember[m]) { isMember[m] = true; memberCount++; } }
+    /// @notice setQuorum - core operation
     function setQuorum(uint256 q) external onlyAdmin { quorum = q; }
 
+    /// @notice propose - core operation
     function propose(address recipient, uint256 amount, string calldata reason) external onlyMember returns (uint256) {
         proposals.push(Proposal(recipient, amount, reason, 0, false, block.timestamp));
         emit ProposalCreated(proposals.length - 1, recipient, amount);
         return proposals.length - 1;
     }
 
+    /// @notice vote - core operation
     function vote(uint256 id) external onlyMember {
         require(!voted[id][msg.sender], "ALREADY_VOTED");
         voted[id][msg.sender] = true;
@@ -56,6 +67,7 @@ contract DaoTreasury {
         emit Voted(id, msg.sender);
     }
 
+    /// @notice execute - core operation
     function execute(uint256 id) external onlyMember {
         Proposal storage p = proposals[id];
         require(!p.executed && p.votes >= quorum, "CANNOT");
